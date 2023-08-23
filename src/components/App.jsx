@@ -1,35 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { nanoid } from 'nanoid';
+import React from 'react';
 import Form from './Form/Form';
 import { Filter } from './Filter/Filter';
 import { List } from './List/List';
+import { useSelector, useDispatch } from 'react-redux';
+import { getContacts } from '../Redux/Contacts/contacts-selector';
+import { getFilter } from '../Redux/Filter/filter-selector';
+import { addContact, deleteContact } from '../Redux/Contacts/contacts-slice';
+import { setFilter } from '../Redux/Filter/filter-slice';
 
-const App = () => {
-  const initializeContacts = () => {
-    const storageContacts = localStorage.getItem('contacts');
-    const parsedStorageContacts = JSON.parse(storageContacts);
-    return parsedStorageContacts ? parsedStorageContacts : [];
+export default function App() {
+  const contacts = useSelector(getContacts);
+  const filter = useSelector(getFilter);
+  const dispatch = useDispatch();
+
+  const onAddContact = contact => {
+    const action = addContact(contact);
+    dispatch(action);
   };
 
-  const [contacts, setContacts] = useState(initializeContacts);
-  const [filter, setFilter] = useState('');
-
-  useEffect(() => {
-    localStorage.setItem('contacts', JSON.stringify(contacts));
-  }, [contacts]);
-
-  const addContact = contact => {
-    setContacts(prevContacts => [{ id: nanoid(), ...contact }, ...prevContacts]);
-  };
-
-  const deleteContact = contactId => {
-    setContacts(prevContacts =>
-      prevContacts.filter(contact => contact.id !== contactId)
-    );
+  const onDeleteContact = contactId => {
+    const action = deleteContact(contactId);
+    dispatch(action);
   };
 
   const filterContacts = event => {
-    setFilter(event.currentTarget.value);
+    const action = setFilter(event.currentTarget.value);
+    dispatch(action);
   };
 
   const getFilteredContacts = () => {
@@ -39,17 +35,16 @@ const App = () => {
     );
   };
 
-  const visibleContacts = getFilteredContacts();
-
   return (
     <div>
       <h1>Phonebook</h1>
-      <Form onSubmit={addContact} currentContacts={contacts} />
+      <Form addContact={onAddContact} />
       <h2>Contacts</h2>
-      <Filter value={filter} onFilterChange={filterContacts} />
-      <List contacts={visibleContacts} deleteContact={deleteContact} />
+      <Filter onFilterChange={filterContacts} />
+      <List
+        contacts={getFilteredContacts()}
+        deleteContact={onDeleteContact}
+      />
     </div>
   );
-};
-
-export default App;
+}
